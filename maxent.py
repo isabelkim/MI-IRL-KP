@@ -33,7 +33,7 @@ def feature_expectation_from_trajectories(features, trajectories):
     fe = np.zeros(n_features)
 
     for t in trajectories:
-        for s in t.states():
+        for s, a, s_prime in t:
             fe += features[s, :]
 
     return fe / len(trajectories)
@@ -55,7 +55,7 @@ def initial_probabilities_from_trajectories(n_states, trajectories):
     p = np.zeros(n_states)
 
     for t in trajectories:
-        p[t.transitions()[0][0]] += 1.0
+        p[t[0][0]] += 1.0
 
     return p / len(trajectories)
 
