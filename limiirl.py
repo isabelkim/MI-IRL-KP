@@ -4,8 +4,27 @@ from sklearn.mixture import GaussianMixture
 from sklearn.mixture import BayesianGaussianMixture
 from sklearn.metrics import pairwise_distances_argmin_min
 
+"""
+Monica Babe ̧s-Vroman, Vukosi Marivate, Kaushik Subramanian, and Michael L. Littman.
+Apprenticeship Learning About Multiple Intentions. In Proceedings of the 28th International
+Conference on Machine Learning, ICML ’11, pages 897–904, Bellevue, WA, USA, 2011. ACM,
+New York, NY, USA. ISBN 978-1-4503-0619-5.
+"""
+def compute_MLE(trajs, M=100, alpha=1, ): 
+    """
+    trajs: N trajectories 
+    M: number of iterations 
+    alpha: step size
+
+    returns theta for set of trajectories
+    """
+    # TODO: find trajectory weights as # of times traj appears / # of trajs
+    # TODO: choose random set of reward weights theta_1 for each (s, a, s')
+
+    pass 
+
 def limiirl(taus, K=1000):
-    # Feature representation of demonstrations (X)
+    # Feature representation of demonstrations (X) -> figure this out
 
 
     # Number of clusters or behavior modes (K)
@@ -13,6 +32,7 @@ def limiirl(taus, K=1000):
     # Warm-start: Cluster the demonstrations using K-Means to initialize EM.
     kmeans = KMeans(n_clusters=K)
     cluster_model = kmeans.fit(taus)
+
 
     # EM (Expectation Maximization)
     # Initialize reward function parameters.
@@ -25,14 +45,11 @@ def limiirl(taus, K=1000):
             u[i][j] = 1 if c == j else 0
                 
     rho = np.zeros(K)
-    for k in range(K):
-        sum = 0
-        for i in range(n):
-            sum += u[i][k]
-        rho[k] = sum / n
+    for k in range(K):       
+        rho[k] = np.sum([u[i][k] for i in range(n)], axis=0) / n
 
 
-    theta = np.random.rand(K, num_features)
+    # theta = np.random.rand(K, num_features)
 
     # Define the EM loop.
     max_iterations = 100
