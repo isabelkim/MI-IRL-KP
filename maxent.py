@@ -450,4 +450,4 @@ def irl_causal(p_transition, features, terminal, trajectories, optim, init, disc
         delta = np.max(np.abs(theta_old - theta))
 
     # re-compute per-state reward and return
-    return features.dot(theta)
+    return features.dot(theta), theta
