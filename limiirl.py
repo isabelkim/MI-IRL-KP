@@ -142,7 +142,9 @@ def limiirl(X, taus, features, M: KMeans, S, K=100, gamma=0.9, epsilon=0.01, max
     n, _ = X.shape 
 
     # calculate initial rho, u, and inital clustering 
-    rho, u, C = init_parameters(X, taus, M)
+    rho, u, C = init_parameters(X, taus, M, K=K)
+
+    print(len(C))
 
     # calculate initial theta for each cluster k 
     # for each cluster k, use the max-ent algorithm to obtain a theta estimate 
@@ -152,6 +154,7 @@ def limiirl(X, taus, features, M: KMeans, S, K=100, gamma=0.9, epsilon=0.01, max
     # calculate initial theta 
     for k in C:
         # format trajectories (s_1, a_1, s_2, ...) as (s_1, a_1, s_2), (s_2, a_2, ...)
+        print(f"LiMIIRL: cluster {k}")
         T = format_traj(C[k])
 
         p_transition = transition_model(T)
@@ -164,8 +167,9 @@ def limiirl(X, taus, features, M: KMeans, S, K=100, gamma=0.9, epsilon=0.01, max
         for s in range(S): 
             theta[k][s] = theta_k[s] 
 
-    
-    for _ in range(max_iter): 
+    print("---Finished Light-weight start")
+
+    for it in range(max_iter): 
         prev_u = u 
         for i in range(n): 
             for k in range(K): 
@@ -177,7 +181,7 @@ def limiirl(X, taus, features, M: KMeans, S, K=100, gamma=0.9, epsilon=0.01, max
             rho[k] = np.sum([u[i][k] for i in range(n)]) / n
 
         # with u[i][k], create new clusters  
-        C_prime = create_clusters(u, taus)
+        C_prime = create_clusters(u, taus, K=K)
         for k in C_prime: 
             T = format_traj(C_prime[k])
 
@@ -188,13 +192,16 @@ def limiirl(X, taus, features, M: KMeans, S, K=100, gamma=0.9, epsilon=0.01, max
             _, theta = irl_causal(p_transition, features, terminal_states, T, optim, init, gamma,
                         eps=1e-3, eps_svf=1e-4, eps_lap=1e-4)
             
-            theta[k] = theta 
+            for s in range(S): 
+                theta[k][s] = theta_k[s] 
 
         converge_cond = 0 
         for i in range(n): 
             for k in range(K): 
                 converge_cond = np.abs(u[i][k] - prev_u[i][k])
         converge_cond /= n
+
+        print(it)
 
         if converge_cond < epsilon: 
             break 
