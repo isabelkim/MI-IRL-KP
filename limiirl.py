@@ -11,7 +11,7 @@ Conference on Machine Learning, ICML ’11, pages 897–904, Bellevue, WA, USA, 
 New York, NY, USA. ISBN 978-1-4503-0619-5.
 """
 
-S = 100 # number of states 
+states = 100 # number of states 
 smoothing_value = 1
 
 
@@ -23,6 +23,7 @@ optim = O.ExpSga(lr=O.linear_decay(lr0=0.2))
 
 def likelihood(traj, features, p_transition, theta, gamma=0.9, num_clusters=100): 
     # calculate reward 
+
     reward = features.dot(theta)
 
     V, Q = S.value_iteration(p_transition, reward, gamma)
@@ -33,6 +34,7 @@ def likelihood(traj, features, p_transition, theta, gamma=0.9, num_clusters=100)
      
     prod = 1 
     n = len(traj)
+
     for i in range(0, n - 1, 2): 
         state = traj[i]
         action = traj[i + 1]
@@ -58,7 +60,7 @@ def transition_model(T):
 
     returns transition model P(s'|s, a) given trajectories T 
     """
-    p_transition = np.zeros((S, S, 5)) + smoothing_value
+    p_transition = np.zeros((states, states, 5)) + smoothing_value
 
     for traj in T:
         for tran in traj:
@@ -102,7 +104,7 @@ def init_parameters(X, taus, M: KMeans, K=100):
             u[i][j] = 1 if c == j else 0
 
             if c in C: 
-                C[c].append(taus[i])
+                C[c] = C[c] + [taus[i]]
             else: 
                 C[c] = [taus[i]]
     
@@ -129,7 +131,7 @@ def create_clusters(u, taus, K=100):
     return { k: C[k] for k in sorted(C.keys())} 
 
 
-def limiirl(X, taus, features, M: KMeans, S, K=100, gamma=0.9, epsilon=0.01, max_iter=100):
+def limiirl(X, taus, features, M: KMeans, states, K=100, gamma=0.9, epsilon=0.01, max_iter=100):
     """
     X: feature representation of training trajectories 
     taus: training trajectories 
@@ -144,11 +146,10 @@ def limiirl(X, taus, features, M: KMeans, S, K=100, gamma=0.9, epsilon=0.01, max
     # calculate initial rho, u, and inital clustering 
     rho, u, C = init_parameters(X, taus, M, K=K)
 
-    print(len(C))
 
     # calculate initial theta for each cluster k 
     # for each cluster k, use the max-ent algorithm to obtain a theta estimate 
-    theta = np.zeros((K, S))
+    theta = np.zeros((K, states))
 
 
     # calculate initial theta 
@@ -164,23 +165,24 @@ def limiirl(X, taus, features, M: KMeans, S, K=100, gamma=0.9, epsilon=0.01, max
         _, theta_k = irl_causal(p_transition, features, terminal_states, T, optim, init, gamma,
                     eps=1e-3, eps_svf=1e-4, eps_lap=1e-4)
         
-        for s in range(S): 
+        for s in range(states): 
             theta[k][s] = theta_k[s] 
 
     print("---Finished Light-weight start")
 
     for it in range(max_iter): 
         prev_u = u 
-        for i in range(n): 
+        for i in range(n):
             for k in range(K): 
                 # change call to likelihood
-                u[i][k] = (rho[k] * likelihood(taus[i], features, transition_model(format_traj(C[k]))), theta[k]) / np.sum([rho[k_prime] * likelihood(taus[i], features, transition_model(format_traj(C[k_prime])), theta[k_prime]) for k_prime in range(K)], axis=0)
+                trans = transition_model(format_traj(C[k]))
+                u[i][k] = (rho[k] * likelihood(taus[i], features, trans, theta[k])) / np.sum([rho[k_prime] * likelihood(taus[i], features, transition_model(format_traj(C[k_prime])), theta[k_prime]) for k_prime in range(K)], axis=0)
 
         # M-step - update parameters 
         for k in range(K):
             rho[k] = np.sum([u[i][k] for i in range(n)]) / n
 
-        # with u[i][k], create new clusters  
+        # with u[i][k], create new clusters 
         C_prime = create_clusters(u, taus, K=K)
         for k in C_prime: 
             T = format_traj(C_prime[k])
@@ -189,16 +191,16 @@ def limiirl(X, taus, features, M: KMeans, S, K=100, gamma=0.9, epsilon=0.01, max
 
             terminal_states = calc_terminal_states(C_prime[k])
 
-            _, theta = irl_causal(p_transition, features, terminal_states, T, optim, init, gamma,
+            _, theta_prime = irl_causal(p_transition, features, terminal_states, T, optim, init, gamma,
                         eps=1e-3, eps_svf=1e-4, eps_lap=1e-4)
             
-            for s in range(S): 
-                theta[k][s] = theta_k[s] 
+            for s in range(states): 
+                theta[k][s] = theta_prime[s] 
 
         converge_cond = 0 
         for i in range(n): 
             for k in range(K): 
-                converge_cond = np.abs(u[i][k] - prev_u[i][k])
+                converge_cond += np.abs(u[i][k] - prev_u[i][k])
         converge_cond /= n
 
         print(it)
@@ -207,4 +209,4 @@ def limiirl(X, taus, features, M: KMeans, S, K=100, gamma=0.9, epsilon=0.01, max
             break 
         
         # return model params 
-        return rho, theta, u         
+    return rho, theta, u         
