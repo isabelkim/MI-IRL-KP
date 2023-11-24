@@ -130,9 +130,7 @@ def action_map(I, action_mapping):
     return action_mapping[I]
 
 
-
-
-def find_patient_events(events_df): 
+def find_patient_events(events_df, action_mapping): 
     subject_events = {} 
     
     for _, event in events_df.iterrows(): 
@@ -205,6 +203,8 @@ def intersect_vitals_events(patient_events, patient_vitals):
 
     return new_patient_events, new_patient_vitals 
 
+
+
 def trajs_from_patient(event_series, vital_series): 
     """  
     event_series: inputevents applied on subject with 'subject_id'
@@ -224,8 +224,8 @@ def trajs_from_patient(event_series, vital_series):
         event1 = combined_series[i]
         event2 = combined_series[i + 1]
         if event1['type'] == "state" and event2['type'] == 'action': 
-            T.append(event1['state'])
-            T.append(event2['action'])
+            T.append(int(event1['state']))
+            T.append(int(event2['action']))
 
     # taking the last vital reading that was recorded 
     # though we should check if this occurs before the last action in T?
@@ -233,6 +233,6 @@ def trajs_from_patient(event_series, vital_series):
     # for this we possibly drop trajectories where vital_series has length < 2?
     # perhaps, as we loop, we can check the lastest_action to be added 
     n_vitals = len(vital_series)
-    T.append(vital_series[n_vitals - 1]['state'])
+    T.append(int(vital_series[n_vitals - 1]['state']))
     
     return T

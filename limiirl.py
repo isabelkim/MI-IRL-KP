@@ -3,6 +3,8 @@ from sklearn.cluster import KMeans
 import optimizer as O 
 import solver as S   
 from maxent import irl_causal
+from maxent import irl_causal, feature_expectation_from_trajectories
+
 
 """
 Monica Babe ̧s-Vroman, Vukosi Marivate, Kaushik Subramanian, and Michael L. Littman.
@@ -21,26 +23,100 @@ init = O.Constant(1.0)
 optim = O.ExpSga(lr=O.linear_decay(lr0=0.2))
 
 
-def likelihood(traj, features, p_transition, theta, gamma=0.9, num_clusters=100): 
+
+def find_policy(p_transition, reward, states, discount=0.9):
+    """ 
+    p_transition: transition probabilities
+    reward: reward function 
+    discount: discount factor 
+
+    calculates V and Q function using value iteration 
+    
+    returns softmax policy and policy 
+    """ 
+    V, Q = S.value_iteration(p_transition, reward, discount)
+    Q = Q.reshape((5, states))
+
+    # get softmax policy 
+    soft_pi = (np.exp(Q)/ np.sum(np.exp(Q), axis = 0)).T
+    policy = np.argmax(Q, axis = 0).reshape(-1, )
+
+    return policy, soft_pi 
+
+def phi(tau, f, gamma): 
+    """
+    phi is a feature-based function that maps a trajectory `tau` -> R 
+    
+    tau: trajectory of the form (s_1, a_1, s_2, a_2, ..., s_{|tau|})
+    f: feature function: S -> R
+    gamma: discount factor 
+
+    phi(tau) = \sum_{t = 1}^{|tau|}} gamma^{t - 1}phi(s_t) 
+
+    define |tau| as number of (s_t, a_t, s_{t + 1}) tuples 
+    """
+
+    n = len(tau)
+    return np.sum([(gamma ** (i // 2)) * f[tau[i]]  for i in range(0, n, 2)], axis = 0)
+
+def q_tau(p_0, tau, p_transition):
+    """
+    tau: let tau be of the form [s_1, a_1, s_2, ...,]
+    p_0: starting state distribution 
+    p_transition: transition model 
+    calculate q(tau)
+    """
+
+    n = len(tau)
+    q = p_0[tau[0]]
+
+    for i in range(0, n - 2, 2): 
+        q *= p_transition[tau[i], tau[i + 2], tau[i + 1]] 
+
+    return q 
+
+def z_theta(theta, taus, p_0, p_transition, f, gamma): 
+    z = 0 
+
+    for tau in taus: 
+        term = q_tau(p_0, tau, p_transition) * np.exp(theta * phi(tau, f, gamma))
+
+        z += term 
+
+    return z 
+
+
+
+def likelihood(tau, taus, features, f, p_0, p_transition, theta, gamma=0.9, num_clusters=100): 
     # calculate reward 
+
+    n = len(tau) 
 
     reward = features.dot(theta)
 
-    V, Q = S.value_iteration(p_transition, reward, gamma)
-    # calculate policy using softmax selection model 
+    pi, soft_pi = find_policy(p_transition, reward, states, gamma)
 
-    Q = Q.reshape((5, num_clusters))
-    soft_pi = (np.exp(Q)/ np.sum(np.exp(Q), axis = 0)).T
-     
-    prod = 1 
-    n = len(traj)
+    l = 1 
 
-    for i in range(0, n - 1, 2): 
-        state = traj[i]
-        action = traj[i + 1]
-        prod *= soft_pi[state][action]
+    for i in range(0, n - 2, 2):
+        l *= soft_pi[tau[i], tau[i + 1]]
+    return l 
 
-    return prod 
+
+def gradient_log_likelihood(tau, f, features, p_0, p_transition, theta, gamma=0.9): 
+    reward = features.dot(theta)
+
+    pi, soft_pi = find_policy(p_transition, reward, states, gamma)
+
+    term = 0 
+
+    n = len(tau)
+    for i in range(0, n - 2, 2): 
+        fi = np.full(f(tau[i], f, gamma), 5)
+        term += (f(tau[i]) - np.dot(soft_pi[tau[i]], fi))
+
+    return term 
+
 
 def format_traj(trajectories):
     lst = []
@@ -131,7 +207,7 @@ def create_clusters(u, taus, K=100):
     return { k: C[k] for k in sorted(C.keys())} 
 
 
-def limiirl(X, taus, features, M: KMeans, states, K=100, gamma=0.9, epsilon=0.01, max_iter=100):
+def limiirl(X, taus, features, M: KMeans, states, transition,f,  p_0, p_transition, K=100, gamma=0.9, epsilon=0.01, max_iter=100, alpha=0.1, descent_iter=200, descent_thres=0.001):
     """
     X: feature representation of training trajectories 
     taus: training trajectories 
@@ -139,6 +215,8 @@ def limiirl(X, taus, features, M: KMeans, states, K=100, gamma=0.9, epsilon=0.01
     S: number of states
     K: number of cluster classes 
     max_iter: max iterations of EM
+    gradient_descent: iter
+    alpha: learning rate
     """
 
     n, _ = X.shape 
@@ -158,11 +236,10 @@ def limiirl(X, taus, features, M: KMeans, states, K=100, gamma=0.9, epsilon=0.01
         print(f"LiMIIRL: cluster {k}")
         T = format_traj(C[k])
 
-        p_transition = transition_model(T)
 
         terminal_states = calc_terminal_states(C[k])
 
-        _, theta_k = irl_causal(p_transition, features, terminal_states, T, optim, init, gamma,
+        _, theta_k = irl_causal(transition, features, terminal_states, T, optim, init, gamma,
                     eps=1e-3, eps_svf=1e-4, eps_lap=1e-4)
         
         for s in range(states): 
@@ -171,31 +248,28 @@ def limiirl(X, taus, features, M: KMeans, states, K=100, gamma=0.9, epsilon=0.01
     print("---Finished Light-weight start")
 
     for it in range(max_iter): 
+
+        # E-step
         prev_u = u 
         for i in range(n):
             for k in range(K): 
                 # change call to likelihood
-                trans = transition_model(format_traj(C[k]))
-                u[i][k] = (rho[k] * likelihood(taus[i], features, trans, theta[k])) / np.sum([rho[k_prime] * likelihood(taus[i], features, transition_model(format_traj(C[k_prime])), theta[k_prime]) for k_prime in range(K)], axis=0)
+                l = likelihood(taus[i], taus, features, f, p_0, p_transition, theta[k], gamma, states)
+                u[i][k] = (rho[k] * l) / np.sum([rho[k_prime] * likelihood(taus[i], taus, features, f, p_0, p_transition, theta[k_prime], gamma, states) for k_prime in range(K)], axis=0)
 
         # M-step - update parameters 
         for k in range(K):
             rho[k] = np.sum([u[i][k] for i in range(n)]) / n
 
-        # with u[i][k], create new clusters 
-        C_prime = create_clusters(u, taus, K=K)
-        for k in C_prime: 
-            T = format_traj(C_prime[k])
 
-            p_transition = transition_model(T)
-
-            terminal_states = calc_terminal_states(C_prime[k])
-
-            _, theta_prime = irl_causal(p_transition, features, terminal_states, T, optim, init, gamma,
-                        eps=1e-3, eps_svf=1e-4, eps_lap=1e-4)
-            
-            for s in range(states): 
-                theta[k][s] = theta_prime[s] 
+        # update theta 
+        for k in range(K): 
+            # perform gradient descent 
+            for _ in range(descent_iter): 
+                s = 0 
+                for i_prime in range(n): 
+                    s += u[i][k] * gradient_log_likelihood(taus[i_prime], f, features, p_0, p_transition, theta[k], gamma)
+                theta[k] = theta[k] + alpha * s 
 
         converge_cond = 0 
         for i in range(n): 
