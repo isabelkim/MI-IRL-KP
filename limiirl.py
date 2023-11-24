@@ -270,8 +270,6 @@ def limiirl(X, taus, features, M: KMeans, states, transition,f,  p_0, p_transiti
                 s = 0 
                 for i_prime in range(n): 
                     s += u[i][k] * gradient_log_likelihood(taus[i_prime], f, features, p_0, p_transition, theta[k], gamma)
-                
-                
                 theta[k] = theta[k] + alpha * s 
 
         converge_cond = 0 
@@ -279,8 +277,6 @@ def limiirl(X, taus, features, M: KMeans, states, transition,f,  p_0, p_transiti
             for k in range(K): 
                 converge_cond += np.abs(u[i][k] - prev_u[i][k])
         converge_cond /= n
-
-        print(it)
 
         if converge_cond < epsilon: 
             break 
