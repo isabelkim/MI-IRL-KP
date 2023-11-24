@@ -112,10 +112,9 @@ def gradient_log_likelihood(tau, f, features, p_0, p_transition, theta, gamma=0.
 
     n = len(tau)
 
-    print(f)
     for i in range(0, n - 2, 2): 
         fi = np.full(5, f[tau[i]])
-        term += (f(tau[i]) - np.dot(soft_pi[tau[i]], fi))
+        term += f[tau[i]] - np.dot(soft_pi[tau[i]], fi)
 
     return term 
 
@@ -271,6 +270,8 @@ def limiirl(X, taus, features, M: KMeans, states, transition,f,  p_0, p_transiti
                 s = 0 
                 for i_prime in range(n): 
                     s += u[i][k] * gradient_log_likelihood(taus[i_prime], f, features, p_0, p_transition, theta[k], gamma)
+                
+                
                 theta[k] = theta[k] + alpha * s 
 
         converge_cond = 0 
