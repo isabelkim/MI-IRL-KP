@@ -106,7 +106,7 @@ def likelihood(tau, taus, features, f, p_0, p_transition, theta, gamma=0.9, num_
 def gradient_log_likelihood(tau, f, features, p_0, p_transition, theta, gamma=0.9): 
     reward = features.dot(theta)
 
-    pi, soft_pi = find_policy(p_transition, reward, states, gamma)
+    _, soft_pi = find_policy(p_transition, reward, states, gamma)
 
     term = 0 
 
@@ -246,7 +246,7 @@ def limiirl(X, taus, features, M: KMeans, states, transition,f,  p_0, p_transiti
         for s in range(states): 
             theta[k][s] = theta_k[s] 
 
-    print("---Finished Light-weight start")
+    print("---Finished Light-weight start---")
 
     for it in range(max_iter): 
 
@@ -258,15 +258,17 @@ def limiirl(X, taus, features, M: KMeans, states, transition,f,  p_0, p_transiti
                 l = likelihood(taus[i], taus, features, f, p_0, p_transition, theta[k], gamma, states)
                 u[i][k] = (rho[k] * l) / np.sum([rho[k_prime] * likelihood(taus[i], taus, features, f, p_0, p_transition, theta[k_prime], gamma, states) for k_prime in range(K)], axis=0)
 
+        print("---E-step---")
         # M-step - update parameters 
         for k in range(K):
             rho[k] = np.sum([u[i][k] for i in range(n)]) / n
 
-
+        print("--M-step--")
         # update theta 
         for k in range(K): 
             # perform gradient descent 
-            for _ in range(descent_iter): 
+            for descent_iter in range(descent_iter): 
+                print(f"Descent iteration: {descent_iter}")
                 s = 0 
                 for i_prime in range(n): 
                     s += u[i][k] * gradient_log_likelihood(taus[i_prime], f, features, p_0, p_transition, theta[k], gamma)
@@ -277,6 +279,8 @@ def limiirl(X, taus, features, M: KMeans, states, transition,f,  p_0, p_transiti
             for k in range(K): 
                 converge_cond += np.abs(u[i][k] - prev_u[i][k])
         converge_cond /= n
+
+        print(f"EM iteration: {it}")
 
         if converge_cond < epsilon: 
             break 
