@@ -147,8 +147,8 @@ if __name__ == "__main__":
 
     _, soft_pi = find_policy(p_transition, reward_single, states)
 
-    n_patients = 500 
-    K = 25
+    n_patients = 100 
+    K = 10
     gamma = 0.9
 
     random_patients = random.sample(list(trajectories.keys()), n_patients)
@@ -167,16 +167,11 @@ if __name__ == "__main__":
     epsilon = 0.005
 
     print("---Start LIMIIRL---")
-    rho, theta, u = limiirl(X, taus, features, cluster_model, states, f=f, p_transition=p_transition, p_0=p_0,  transition=p_transition, max_iter=max_iterations, K=K, descent_iter=100)
+    rho, theta, u = limiirl(X, taus, features, cluster_model, states, f=f, p_transition=p_transition, p_0=p_0,  transition=p_transition, max_iter=max_iterations, K=K, descent_iter=50)
 
     print("---Finished LIMIIRL---")
 
-    rho_list = list(rho)
-    theta_list = list(theta)
-    u_list = list(u) 
-
-    save_json({ "rho": rho_list, "theta": theta_list, "u": u_list },f"data/experiments/trial_{datetime.now().timestamp()}")
-
+    np.savez(f"data/experiments/trial_{datetime.now().timestamp()}", u=u, rho=rho, theta=theta)
 
 
 

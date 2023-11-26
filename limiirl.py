@@ -250,12 +250,15 @@ def limiirl(X, taus, features, M: KMeans, states, transition,f,  p_0, p_transiti
 
     for it in range(max_iter): 
 
+        print(f"EM iteration: {it + 1}")
+
         # E-step
         prev_u = u 
         for i in range(n):
             for k in range(K): 
                 # change call to likelihood
                 l = likelihood(taus[i], taus, features, f, p_0, p_transition, theta[k], gamma, states)
+                print(f"E-step: {i, k}")
                 u[i][k] = (rho[k] * l) / np.sum([rho[k_prime] * likelihood(taus[i], taus, features, f, p_0, p_transition, theta[k_prime], gamma, states) for k_prime in range(K)], axis=0)
 
         print("---E-step---")
@@ -268,7 +271,7 @@ def limiirl(X, taus, features, M: KMeans, states, transition,f,  p_0, p_transiti
         for k in range(K): 
             # perform gradient descent 
             for descent_iter in range(descent_iter): 
-                print(f"Descent iteration: {descent_iter}")
+                print(f"Descent iteration: {descent_iter}, expert: {k}")
                 s = 0 
                 for i_prime in range(n): 
                     s += u[i][k] * gradient_log_likelihood(taus[i_prime], f, features, p_0, p_transition, theta[k], gamma)
@@ -279,8 +282,6 @@ def limiirl(X, taus, features, M: KMeans, states, transition,f,  p_0, p_transiti
             for k in range(K): 
                 converge_cond += np.abs(u[i][k] - prev_u[i][k])
         converge_cond /= n
-
-        print(f"EM iteration: {it}")
 
         if converge_cond < epsilon: 
             break 
