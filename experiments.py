@@ -147,8 +147,8 @@ if __name__ == "__main__":
 
     _, soft_pi = find_policy(p_transition, reward_single, states)
 
-    n_patients = 100 
-    K = 10
+    n_patients = 500 
+    K = 25
     gamma = 0.9
 
     random_patients = random.sample(list(trajectories.keys()), n_patients)
@@ -162,12 +162,12 @@ if __name__ == "__main__":
     cluster_model = cluster_trajectories(X, n_experts=K)
     print("---Clustered Sampled Trajectories---")
 
-    max_iterations = 40
+    max_iterations = 30
     taus = list(trajectories_s.values())
     epsilon = 0.005
 
     print("---Start LIMIIRL---")
-    rho, theta, u = limiirl(X, taus, features, cluster_model, states, f=f, p_transition=p_transition, p_0=p_0,  transition=p_transition, max_iter=max_iterations, K=K, descent_iter=50)
+    rho, theta, u = limiirl(X, taus, features, cluster_model, states, f=f, p_transition=p_transition, p_0=p_0,  transition=p_transition, epsilon=0.001, max_iter=max_iterations, K=K, descent_iter=50)
 
     print("---Finished LIMIIRL---")
 
