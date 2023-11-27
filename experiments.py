@@ -157,7 +157,7 @@ if __name__ == "__main__":
 
     ts = datetime.now().timestamp()
 
-    save_json(trajectories_s, f"data/experiments/trial_{ts}.json")
+    save_json(trajectories_s, f"data/samples/trial_{ts}.json")
 
     f = feature_expectation_from_trajectories(features, T)
     X = feature_trajectories(trajectories_s)
