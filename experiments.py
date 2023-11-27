@@ -147,14 +147,17 @@ if __name__ == "__main__":
 
     _, soft_pi = find_policy(p_transition, reward_single, states)
 
-    n_patients = 500 
-    K = 25
+    n_patients = 50 
+    K = 5
     gamma = 0.9
 
     random_patients = random.sample(list(trajectories.keys()), n_patients)
 
     trajectories_s = { patient: trajectories[patient] for patient in random_patients }
 
+    ts = datetime.now().timestamp()
+
+    save_json(trajectories_s, f"data/experiments/trial_{ts}.json")
 
     f = feature_expectation_from_trajectories(features, T)
     X = feature_trajectories(trajectories_s)
@@ -171,7 +174,7 @@ if __name__ == "__main__":
 
     print("---Finished LIMIIRL---")
 
-    np.savez(f"data/experiments/trial_{datetime.now().timestamp()}", u=u, rho=rho, theta=theta)
+    np.savez(f"data/experiments/trial_{ts}", u=u, rho=rho, theta=theta)
 
 
 
