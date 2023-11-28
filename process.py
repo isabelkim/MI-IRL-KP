@@ -36,7 +36,7 @@ def discretize_S(M, n_clusters=100, random_state=42):
 if __name__ == "__main__": 
 
     try: 
-        states = int(input("Number of clusters: ")) 
+        states = int(input("Number of states: ")) 
     except: 
         print("Error: provide valid number for states")
 

@@ -118,6 +118,11 @@ def calc_start_dist(taus, S):
     return X / n 
 
 if __name__ == "__main__": 
+    try: 
+        states = int(input("Number of states: ")) 
+    except: 
+        print("Error: provide valid number for states")
+
     M = read_json("data/process/M.json")
     M = np.array(M) 
 
@@ -129,7 +134,6 @@ if __name__ == "__main__":
 
     print("--Read Trajectories--")
 
-    states = 25 
     actions = 5 
     discount = 0.9 
     T = convert_traj(trajectories)
