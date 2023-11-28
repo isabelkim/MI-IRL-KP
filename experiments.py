@@ -147,8 +147,8 @@ if __name__ == "__main__":
 
     _, soft_pi = find_policy(p_transition, reward_single, states)
 
-    n_patients = 50 
-    K = 5
+    n_patients = 2000 
+    K = 80
     gamma = 0.9
 
     random_patients = random.sample(list(trajectories.keys()), n_patients)
