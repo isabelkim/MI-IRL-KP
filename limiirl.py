@@ -13,7 +13,6 @@ Conference on Machine Learning, ICML ’11, pages 897–904, Bellevue, WA, USA, 
 New York, NY, USA. ISBN 978-1-4503-0619-5.
 """
 
-states = 100 # number of states 
 smoothing_value = 1
 
 
@@ -87,14 +86,14 @@ def z_theta(theta, taus, p_0, p_transition, f, gamma):
 
 
 
-def likelihood(tau, taus, features, f, p_0, p_transition, theta, gamma=0.9, num_clusters=100): 
+def likelihood(tau, states, features, p_transition, theta, gamma=0.9): 
     # calculate reward 
 
     n = len(tau) 
 
     reward = features.dot(theta)
 
-    pi, soft_pi = find_policy(p_transition, reward, states, gamma)
+    _, soft_pi = find_policy(p_transition, reward, states, gamma)
 
     l = 1 
 
@@ -103,7 +102,7 @@ def likelihood(tau, taus, features, f, p_0, p_transition, theta, gamma=0.9, num_
     return l 
 
 
-def gradient_log_likelihood(tau, f, features, p_0, p_transition, theta, gamma=0.9): 
+def gradient_log_likelihood(tau, f, features, states, p_transition, theta, gamma=0.9): 
     reward = features.dot(theta)
 
     _, soft_pi = find_policy(p_transition, reward, states, gamma)
@@ -131,8 +130,10 @@ def format_traj(trajectories):
     
     return lst
 
-def transition_model(T): 
+def transition_model(T, states): 
     """ 
+    change this 
+
     T: trajectories { tau_1, ..., tau_{N - 1}}
 
     returns transition model P(s'|s, a) given trajectories T 
@@ -208,7 +209,7 @@ def create_clusters(u, taus, K=100):
     return { k: C[k] for k in sorted(C.keys())} 
 
 
-def limiirl(X, taus, features, M: KMeans, states, transition,f,  p_0, p_transition, K=100, gamma=0.9, epsilon=0.01, max_iter=100, alpha=0.1, descent_iter=200, descent_thres=0.001):
+def limiirl(X, taus, features, M: KMeans, states, transition, f, K=100, gamma=0.9, epsilon=0.01, max_iter=100, alpha=0.1, descent_iter=200):
     """
     X: feature representation of training trajectories 
     taus: training trajectories 
@@ -257,9 +258,9 @@ def limiirl(X, taus, features, M: KMeans, states, transition,f,  p_0, p_transiti
         for i in range(n):
             for k in range(K): 
                 # change call to likelihood
-                l = likelihood(taus[i], taus, features, f, p_0, p_transition, theta[k], gamma, states)
+                l = likelihood(taus[i], states, features, transition, theta[k], gamma)
                 print(f"E-step: {i, k}")
-                u[i][k] = (rho[k] * l) / np.sum([rho[k_prime] * likelihood(taus[i], taus, features, f, p_0, p_transition, theta[k_prime], gamma, states) for k_prime in range(K)], axis=0)
+                u[i][k] = (rho[k] * l) / np.sum([rho[k_prime] * likelihood(taus[i], states, features, transition, theta[k_prime], gamma) for k_prime in range(K)], axis=0)
 
         print("---E-step---")
         # M-step - update parameters 
@@ -274,7 +275,7 @@ def limiirl(X, taus, features, M: KMeans, states, transition,f,  p_0, p_transiti
                 print(f"Descent iteration: {descent_iter}, expert: {k}")
                 s = 0 
                 for i_prime in range(n): 
-                    s += u[i][k] * gradient_log_likelihood(taus[i_prime], f, features, p_0, p_transition, theta[k], gamma)
+                    s += u[i][k] * gradient_log_likelihood(taus[i_prime], f, features, states, transition, theta[k], gamma)
                 theta[k] = theta[k] + alpha * s 
 
         converge_cond = 0 

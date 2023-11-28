@@ -49,7 +49,7 @@ def convert_traj(trajectories):
     return lst
 
 
-def calc_tran_model(taus, states=100, smoothing_value=1): 
+def calc_tran_model(taus, smoothing_value=1): 
     p_transition = np.zeros((states, states, actions)) + smoothing_value
 
     for traj in taus:
@@ -129,7 +129,7 @@ if __name__ == "__main__":
 
     print("--Read Trajectories--")
 
-    states = 100 
+    states = 25 
     actions = 5 
     discount = 0.9 
     T = convert_traj(trajectories)
@@ -147,8 +147,8 @@ if __name__ == "__main__":
 
     _, soft_pi = find_policy(p_transition, reward_single, states)
 
-    n_patients = 2000 
-    K = 80
+    n_patients = 50 
+    K = 5
     gamma = 0.9
 
     random_patients = random.sample(list(trajectories.keys()), n_patients)
@@ -170,7 +170,7 @@ if __name__ == "__main__":
     epsilon = 0.005
 
     print("---Start LIMIIRL---")
-    rho, theta, u = limiirl(X, taus, features, cluster_model, states, f=f, p_transition=p_transition, p_0=p_0,  transition=p_transition, epsilon=0.001, max_iter=max_iterations, K=K, descent_iter=50)
+    rho, theta, u = limiirl(X, taus, features, cluster_model, states, f=f, transition=p_transition, epsilon=0.001, max_iter=max_iterations, K=K, descent_iter=50)
 
     print("---Finished LIMIIRL---")
 
