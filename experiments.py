@@ -49,7 +49,7 @@ def convert_traj(trajectories):
     return lst
 
 
-def calc_tran_model(taus, smoothing_value=1): 
+def calc_tran_model(taus, states, smoothing_value=1): 
     p_transition = np.zeros((states, states, actions)) + smoothing_value
 
     for traj in taus:
@@ -118,6 +118,9 @@ def calc_start_dist(taus, S):
     return X / n 
 
 if __name__ == "__main__": 
+
+    states = 0 
+
     try: 
         states = int(input("Number of states: ")) 
     except: 

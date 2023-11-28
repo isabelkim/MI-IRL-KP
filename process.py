@@ -1,5 +1,7 @@
 from utils import *
 from sklearn.cluster import KMeans
+import threading
+
 
 
 def construct_trajectories(p_events, p_vitals): 
@@ -75,6 +77,7 @@ if __name__ == "__main__":
     actions = inputevents_df['ordercategorydescription'].unique() 
     action_mapping = {k:v for k, v in zip(actions, range(n_actions))}
 
+    patient_data = {} 
 
     patient_events = find_patient_events(inputevents_sample, action_mapping)
     patient_vitals = find_patient_vitals(data_pv, state_model, features, rhythms_mapping)
