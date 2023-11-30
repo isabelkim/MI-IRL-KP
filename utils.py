@@ -4,25 +4,6 @@ import json
 import numpy as np
 import datetime 
 
-def fill_NANS(df): 
-
-    output_df = df.copy() 
-
-    columns = ['o2sat']
-
-    medians = {} 
-
-    for col in columns: 
-        col_median = df[col].median()
-        medians[col] = col_median 
-
-    for index, row in df.iterrows(): 
-        for col in columns: 
-            if math.isnan(row[col]): 
-                df.at[index, col] = medians[col]
-
-    return df
-
 def save_json(data, filename):
     """
     Write a Python object to a JSON file.
@@ -69,25 +50,55 @@ def read_csv_to_dataframe(file_path):
         print(f"An error occurred: {str(e)}")
         return None
 
-def fill_NANS(df): 
+# def fill_NANS(df): 
 
-    output_df = df.copy() 
+#     output_df = df.copy() 
 
-    columns = ['o2sat']
+#     columns = ["gender", "anchor_age", "temperature", "heartrate", "resprate", "o2sat", "sbp", "dbp", "rhythm"]
 
-    medians = {} 
+#     medians = {} 
 
-    for col in columns: 
+#     for col in columns: 
+#         col_median = df[col].median()
+#         medians[col] = col_median 
+
+#     for index, row in df.iterrows(): 
+#         for col in columns: 
+#             if math.isnan(row[col]): 
+#                 df.at[index, col] = medians[col]
+
+#     return df
+
+def fill_NANS(df):
+    columns = ["gender", "anchor_age", "temperature", "heartrate", "resprate", "o2sat", "sbp", "dbp", "rhythm"]
+
+    medians = {}
+
+    # Define cutoff ranges for each column
+    cutoff_ranges = {
+        "temperature": (70, 120),
+        "heartrate": (0, 600),
+        "resprate": (0, 900),
+        "sbp": (50, 370),
+        "dbp": (20, 360)
+    }
+
+    for col in columns:
         col_median = df[col].median()
-        medians[col] = col_median 
+        medians[col] = col_median
 
-    for index, row in df.iterrows(): 
-        for col in columns: 
-            if math.isnan(row[col]): 
+    for index, row in df.iterrows():
+        for col in columns:
+            if math.isnan(row[col]):
+                # If the value is NaN, replace it with the median
                 df.at[index, col] = medians[col]
+            elif col in cutoff_ranges:
+                # Check if the value is within the specified range, otherwise replace with the median
+                min_val, max_val = cutoff_ranges[col]
+                if not (min_val <= row[col] <= max_val):
+                    df.at[index, col] = medians[col]
 
     return df
-
 
 def map_rhythm(r, rhythms_mapping): 
     return rhythms_mapping[r]
