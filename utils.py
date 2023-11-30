@@ -16,6 +16,7 @@ def fill_NANS(df):
         col_median = df[col].median()
         medians[col] = col_median 
 
+    print(medians)
     for index, row in df.iterrows(): 
         for col in columns: 
             if math.isnan(row[col]): 
