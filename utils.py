@@ -70,13 +70,13 @@ def read_csv_to_dataframe(file_path):
 #     return df
 
 def fill_NANS(df):
-    columns = ["gender", "anchor_age", "temperature", "heartrate", "resprate", "o2sat", "sbp", "dbp", "rhythm"]
+    columns = ["temperature", "heartrate", "resprate", "o2sat", "sbp", "dbp"]
 
     medians = {}
 
     # Define cutoff ranges for each column
     cutoff_ranges = {
-        "temperature": (70, 120),
+        # "temperature": (70, 120),
         "heartrate": (0, 600),
         "resprate": (0, 900),
         "sbp": (50, 370),
