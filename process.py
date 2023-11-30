@@ -1,5 +1,7 @@
 from utils import *
 from sklearn.cluster import KMeans
+import threading
+
 
 
 def construct_trajectories(p_events, p_vitals): 
@@ -34,11 +36,18 @@ def discretize_S(M, n_clusters=100, random_state=42):
 
 
 if __name__ == "__main__": 
+
+    try: 
+        states = int(input("Number of states: ")) 
+    except: 
+        print("Error: provide valid number for states")
+
     # read from CSV files 
     patients_df = read_csv_to_dataframe("data/patients.csv")
     inputevents_df = read_csv_to_dataframe("data/inputevents.csv")
     vitalsign_df = read_csv_to_dataframe("data/vitalsign.csv")
 
+    print("---Read from dataframe---")
 
     # merge patients with vitals dataframe 
     data_pv = pd.merge(patients_df, vitalsign_df, on='subject_id', how='inner')
@@ -55,7 +64,11 @@ if __name__ == "__main__":
 
     M = construct_M(data_pv, features, rhythms_mapping) 
 
-    state_model = discretize_S(M)
+    print("---Created Matrix M---")
+
+    state_model = discretize_S(M, n_clusters=states)
+
+    print("---discretized state space---")
 
 
     inputevents_sample = inputevents_df.sample(n=6000000, random_state = 42)
@@ -64,10 +77,12 @@ if __name__ == "__main__":
     actions = inputevents_df['ordercategorydescription'].unique() 
     action_mapping = {k:v for k, v in zip(actions, range(n_actions))}
 
+    patient_data = {} 
 
     patient_events = find_patient_events(inputevents_sample, action_mapping)
     patient_vitals = find_patient_vitals(data_pv, state_model, features, rhythms_mapping)
 
+    print("---constructing trajectories---")
 
     p_events, p_vitals = intersect_vitals_events(patient_events, patient_vitals)
     trajectories = construct_trajectories(p_events, p_vitals)
