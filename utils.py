@@ -50,25 +50,6 @@ def read_csv_to_dataframe(file_path):
         print(f"An error occurred: {str(e)}")
         return None
 
-# def fill_NANS(df): 
-
-#     output_df = df.copy() 
-
-#     columns = ["gender", "anchor_age", "temperature", "heartrate", "resprate", "o2sat", "sbp", "dbp", "rhythm"]
-
-#     medians = {} 
-
-#     for col in columns: 
-#         col_median = df[col].median()
-#         medians[col] = col_median 
-
-#     for index, row in df.iterrows(): 
-#         for col in columns: 
-#             if math.isnan(row[col]): 
-#                 df.at[index, col] = medians[col]
-
-#     return df
-
 def fill_NANS(df):
     columns = ["temperature", "heartrate", "resprate", "o2sat", "sbp", "dbp"]
 
@@ -80,7 +61,8 @@ def fill_NANS(df):
         "heartrate": (0, 600),
         "resprate": (0, 900),
         "sbp": (50, 370),
-        "dbp": (20, 360)
+        "dbp": (20, 360),
+        "value": (0, 200)
     }
 
     for col in columns:

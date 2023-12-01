@@ -46,11 +46,16 @@ if __name__ == "__main__":
     patients_df = read_csv_to_dataframe("data/patients.csv")
     inputevents_df = read_csv_to_dataframe("data/inputevents.csv")
     vitalsign_df = read_csv_to_dataframe("data/vitalsign.csv")
+    outputevents_df = read_csv_to_dataframe("data/outputevents.csv")
+    d_items_df = read_csv_to_dataframe("data/d_items.csv")
 
     print("---Read from dataframe---")
 
     # merge patients with vitals dataframe 
     data_pv = pd.merge(patients_df, vitalsign_df, on='subject_id', how='inner')
+
+    # merge patients and vitals dataframe with outputevents
+    data_pv = pd.merge(data_pv, outputevents_df[outputevents_df['itemid'] == 220615], on='subject_id', how='inner', suffixes=('', '_outputevents'))
 
     # fill in missing values 
     fill_NANS(data_pv)
@@ -60,7 +65,7 @@ if __name__ == "__main__":
     n_rhythms = len(unique_rhythms)
     rhythms_mapping = {k:v for k,v in zip(unique_rhythms, range(n_rhythms))}
 
-    features = ["gender", "anchor_age", "temperature", "heartrate", "resprate", "o2sat", "sbp", "dbp", "rhythm"]
+    features = ["gender", "anchor_age", "temperature", "heartrate", "resprate", "o2sat", "sbp", "dbp", "rhythm", "value"]
 
     M = construct_M(data_pv, features, rhythms_mapping) 
 
