@@ -120,9 +120,15 @@ def calc_start_dist(taus, S):
 if __name__ == "__main__": 
 
     states = 0 
+    K = 0 
+    n_patients = 0 
 
     try: 
         states = int(input("Number of states: ")) 
+        n_patients = int(input("Number of patients: "))
+        K = int(input("Number of experts: "))
+
+
     except: 
         print("Error: provide valid number for states")
 
@@ -153,9 +159,6 @@ if __name__ == "__main__":
     print("---Trained Single Intention Model---")
 
     _, soft_pi = find_policy(p_transition, reward_single, states)
-
-    n_patients = 200
-    K = 8
 
     gamma = 0.9
 
