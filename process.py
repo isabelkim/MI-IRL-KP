@@ -54,9 +54,6 @@ if __name__ == "__main__":
     # merge patients with vitals dataframe 
     data_pv = pd.merge(patients_df, vitalsign_df, on='subject_id', how='inner')
 
-    # merge patients and vitals dataframe with outputevents
-    data_pv = pd.merge(data_pv, outputevents_df[outputevents_df['itemid'] == 220615], on='subject_id', how='inner', suffixes=('', '_outputevents'))
-
     # fill in missing values 
     fill_NANS(data_pv)
 
@@ -65,7 +62,7 @@ if __name__ == "__main__":
     n_rhythms = len(unique_rhythms)
     rhythms_mapping = {k:v for k,v in zip(unique_rhythms, range(n_rhythms))}
 
-    features = ["gender", "anchor_age", "temperature", "heartrate", "resprate", "o2sat", "sbp", "dbp", "rhythm", "value"]
+    features = ["gender", "anchor_age", "temperature", "heartrate", "resprate", "o2sat", "sbp", "dbp", "rhythm"]
 
     M = construct_M(data_pv, features, rhythms_mapping) 
 
