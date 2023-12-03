@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
     features = ["gender", "anchor_age", "temperature", "heartrate", "resprate", "o2sat", "sbp", "dbp", "rhythm"]
 
-    M = construct_M(data_pv, features, rhythms_mapping) 
+    M = construct_M(data_pv, features, rhythms_mapping, states) 
 
     print("---Created Matrix M---")
 
@@ -88,4 +88,4 @@ if __name__ == "__main__":
 
     p_events, p_vitals = intersect_vitals_events(patient_events, patient_vitals)
     trajectories = construct_trajectories(p_events, p_vitals)
-    save_json(trajectories, "data/process/trajs.json")
+    save_json(trajectories, f"data/process/trajs_{states}.json")

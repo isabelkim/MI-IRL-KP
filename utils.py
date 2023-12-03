@@ -103,13 +103,13 @@ def feature_map(row, features, rhythms_mapping):
 
     return r 
 
-def construct_M(df, features, rhythms_mapping):
+def construct_M(df, features, rhythms_mapping, states):
     M = []
     for _, row in df.iterrows():
         r = feature_map(row, features, rhythms_mapping)
         M.append(r)
     
-    save_json(M, "data/process/M.json")
+    save_json(M, f"data/process/M_{states}.json")
     return np.array(M)
 
 
