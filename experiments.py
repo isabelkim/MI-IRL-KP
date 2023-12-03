@@ -126,13 +126,13 @@ if __name__ == "__main__":
     except: 
         print("Error: provide valid number for states")
 
-    M = read_json("data/process/M.json")
+    M = read_json(f"data/process/M_{states}.json")
     M = np.array(M) 
 
     print("--Read matrix M--")
 
 
-    trajectories = read_json("data/process/trajs.json")
+    trajectories = read_json(f"data/process/trajs_{states}.json")
     trajectories = { int(k) : v for k, v in zip(trajectories.keys(), trajectories.values()) }
 
     print("--Read Trajectories--")
