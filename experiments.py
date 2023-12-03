@@ -168,7 +168,7 @@ if __name__ == "__main__":
 
     ts = datetime.now().timestamp()
 
-    save_json(trajectories_s, f"data/samples/trial_{ts}.json")
+    save_json(trajectories_s, f"data/samples/trial_{ts}_{states}.json")
 
     f = feature_expectation_from_trajectories(features, T)
     X = feature_trajectories(trajectories_s)
@@ -185,7 +185,7 @@ if __name__ == "__main__":
 
     print("---Finished LIMIIRL---")
 
-    np.savez(f"data/experiments/trial_{ts}", u=u, rho=rho, theta=theta)
+    np.savez(f"data/experiments/trial_{ts}_{states}", u=u, rho=rho, theta=theta)
 
 
 
