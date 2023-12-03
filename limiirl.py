@@ -209,7 +209,7 @@ def create_clusters(u, taus, K=100):
     return { k: C[k] for k in sorted(C.keys())} 
 
 
-def limiirl(X, taus, features, M: KMeans, states, transition, f, K=100, gamma=0.9, epsilon=0.01, max_iter=100, alpha=0.1, descent_iter=200):
+def limiirl(X, taus, features, M: KMeans, states, transition, f, K=100, gamma=0.9, epsilon=0.001, max_iter=100, alpha=0.1, descent_iter=200):
     """
     X: feature representation of training trajectories 
     taus: training trajectories 
