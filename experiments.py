@@ -126,7 +126,7 @@ if __name__ == "__main__":
 
     try: 
         states = int(input("Number of states: ")) 
-        # n_patients = int(input("Number of patients: "))
+        n_patients = int(input("Number of patients: "))
         K = int(input("Number of experts: "))
         start = input("Run EM?: ")
     except: 
@@ -165,16 +165,16 @@ if __name__ == "__main__":
 
     gamma = 0.9
 
-    # random_patients = random.sample(list(trajectories.keys()), n_patients)
+    random_patients = random.sample(list(trajectories.keys()), n_patients)
 
     # taus = 
-    # trajectories_s = { patient: trajectories[patient] for patient in random_patients }
+    trajectories = { patient: trajectories[patient] for patient in random_patients }
 
     ts = datetime.now().timestamp()
 
     # save_json(trajectories_s, f"data/samples/trial_{ts}_{states}{append_start}.json")
 
-    trajectories = {key: value for key, value in trajectories.items() if len(trajectories[key]) >= 6}
+    # trajectories = {key: value for key, value in trajectories.items() if len(trajectories[key]) >= 6}
  
 
     f = feature_expectation_from_trajectories(features, T)
