@@ -96,14 +96,10 @@ def likelihood(tau, states, p_0, features, p_transition, theta, gamma=0.9):
     _, soft_pi = find_policy(p_transition, reward, states, gamma)
 
 
-    l = np.log(p_0[tau[0]]) 
+    l = 0
 
     for i in range(0, n - 2, 2):
-        if (soft_pi[tau[i], tau[i + 1]]) == 0: 
-            return 0 
-        if (p_transition[tau[i], tau[i + 2], tau[i + 1]]) == 0: 
-            return 0 
-        l += np.log(soft_pi[tau[i], tau[i + 1]]) +  np.log(p_transition[tau[i], tau[i + 2], tau[i + 1]])
+        l += np.log(soft_pi[tau[i], tau[i + 1]]) 
 
     return np.exp(l) 
 
@@ -183,19 +179,15 @@ def init_parameters(X, taus, M: KMeans, K=100):
     # initialize rho  
     rho = np.zeros(K)
 
-    for i in range(n): 
-        for j in range(K): 
-            u[i][j] = 1 / K
+    for i in range(n):
+        for j in range(K):
+            c = M.labels_[i]
+            u[i][j] = 1 if c == j else 0
 
-    # for i in range(n):
-    #     for j in range(K):
-    #         c = M.labels_[i]
-    #         u[i][j] = 1 if c == j else 0
-
-    #         if c in C: 
-    #             C[c] = C[c] + [taus[i]]
-    #         else: 
-    #             C[c] = [taus[i]]
+            if c in C: 
+                C[c] = C[c] + [taus[i]]
+            else: 
+                C[c] = [taus[i]]
     
     for k in range(K): 
         rho[k] = np.sum([u[i][k] for i in range(n)], axis=0) / n
@@ -242,6 +234,12 @@ def limiirl(X, taus, features, M: KMeans, states, transition, f, p_0, K=100, gam
     # for each cluster k, use the max-ent algorithm to obtain a theta estimate 
     theta = np.zeros((K, states))
 
+    T = format_traj(taus)
+
+    terminal_states = calc_terminal_states(T)
+
+    _, theta_s = irl_causal(transition, features, terminal_states, T, optim, init, gamma,
+                    eps=1e-3, eps_svf=1e-4, eps_lap=1e-4)
 
     # # calculate initial theta 
     # for k in C:
@@ -254,11 +252,12 @@ def limiirl(X, taus, features, M: KMeans, states, transition, f, p_0, K=100, gam
 
     #     _, theta_k = irl_causal(transition, features, terminal_states, T, optim, init, gamma,
     #                 eps=1e-3, eps_svf=1e-4, eps_lap=1e-4)
-        
-    #     for s in range(states): 
-    #         theta[k][s] = theta_k[s] 
+    
+    for k in range(K): 
+        for s in range(states): 
+            theta[k][s] = theta_s[s] 
 
-    # print("---Finished Light-weight start---")
+    print("---Finished Light-weight start---")
 
     if run_EM: 
 
@@ -272,7 +271,10 @@ def limiirl(X, taus, features, M: KMeans, states, transition, f, p_0, K=100, gam
                 for k in range(K): 
                     # change call to likelihood
                     l = likelihood(taus[i], states, p_0, features, transition, theta[k], gamma)
+                    print(l)
+                    # print(f"E-step: {i, k}")
                     u[i][k] = (rho[k] * l) / np.sum([rho[k_prime] * likelihood(taus[i], states, p_0, features, transition, theta[k_prime], gamma) for k_prime in range(K)], axis=0)
+                    # print(u[i][k])
 
             # print("---E-step---")
             # M-step - update parameters 
@@ -284,7 +286,7 @@ def limiirl(X, taus, features, M: KMeans, states, transition, f, p_0, K=100, gam
             for k in range(K): 
                 # perform gradient descent 
                 for descent_iter in range(descent_iter): 
-                    # print(f"Descent iteration: {descent_iter}, expert: {k}")
+                    print(f"Descent iteration: {descent_iter}, expert: {k}")
                     s = 0 
                     for i_prime in range(n): 
                         s += u[i][k] * gradient_log_likelihood(taus[i_prime], f, features, states, transition, theta[k], gamma)
