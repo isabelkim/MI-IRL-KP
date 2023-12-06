@@ -190,7 +190,7 @@ if __name__ == "__main__":
 
     print("---Start LIMIIRL---")
 
-    rho, theta, u = limiirl(X, taus, features, cluster_model, states, f=f, transition=p_transition, epsilon=0.001, max_iter=max_iterations, K=K, descent_iter=descent_iter, run_EM=(start == "yes"))
+    rho, theta, u = limiirl(X=X, taus=taus, p_0=p_0, features=features, M=cluster_model, states=states, f=f, transition=p_transition, epsilon=0.001, max_iter=max_iterations, K=K, descent_iter=descent_iter, run_EM=(start == "yes"))
 
     print("---Finished LIMIIRL---")
 
