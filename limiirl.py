@@ -241,26 +241,29 @@ def limiirl(X, taus, features, M: KMeans, states, transition, f, K=100, gamma=0.
     T = format_traj(taus)
 
 
-    terminal_states = calc_terminal_states(taus)
+    # terminal_states = calc_terminal_states(taus)
 
-    _, theta_s = irl_causal(transition, features, terminal_states, T, optim, init, gamma,
-                    eps=1e-3, eps_svf=1e-4, eps_lap=1e-4)
-        
-    for k in range(K): 
-        for s in range(states): 
-            theta[k][s] = theta_s[s] 
-
-    # calculate initial theta 
-    # for k in C:
-    #     # format trajectories (s_1, a_1, s_2, ...) as (s_1, a_1, s_2), (s_2, a_2, ...)
-    #     print(f"LiMIIRL: cluster {k}")
-        
-
-    #     _, theta_k = irl_causal(transition, features, terminal_states, T, optim, init, gamma,
+    # _, theta_s = irl_causal(transition, features, terminal_states, T, optim, init, gamma,
     #                 eps=1e-3, eps_svf=1e-4, eps_lap=1e-4)
         
+    # for k in range(K): 
     #     for s in range(states): 
-    #         theta[k][s] = theta_k[s] 
+    #         theta[k][s] = theta_s[s] 
+
+    # calculate initial theta 
+    for k in C:
+        # format trajectories (s_1, a_1, s_2, ...) as (s_1, a_1, s_2), (s_2, a_2, ...)
+        print(f"LiMIIRL: cluster {k}")
+        T = format_traj(C[k])
+
+
+        terminal_states = calc_terminal_states(C[k])
+
+        _, theta_k = irl_causal(transition, features, terminal_states, T, optim, init, gamma,
+                    eps=1e-3, eps_svf=1e-4, eps_lap=1e-4)
+        
+        for s in range(states): 
+            theta[k][s] = theta_k[s] 
 
     print("---Finished Light-weight start---")
 
