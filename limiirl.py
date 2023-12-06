@@ -4,6 +4,7 @@ import optimizer as O
 import solver as S   
 from maxent import irl_causal
 from maxent import irl_causal, feature_expectation_from_trajectories
+import math 
 
 
 """
@@ -95,10 +96,16 @@ def likelihood(tau, states, features, p_transition, theta, gamma=0.9):
 
     _, soft_pi = find_policy(p_transition, reward, states, gamma)
 
-    l = 1 
+    l = 0
 
     for i in range(0, n - 2, 2):
-        l *= soft_pi[tau[i], tau[i + 1]]
+        if soft_pi[tau[i], tau[i + 1]] == 0: 
+            return 0
+        l += np.log(soft_pi[tau[i], tau[i + 1]])
+
+    if math.isnan(l): 
+        return 0 
+    
     return l 
 
 
@@ -112,7 +119,7 @@ def gradient_log_likelihood(tau, f, features, states, p_transition, theta, gamma
     n = len(tau)
 
     for i in range(0, n - 2, 2): 
-        fi = np.full(5, f[tau[i]])
+        fi = np.full(6, f[tau[i]])
         term += f[tau[i]] - np.dot(soft_pi[tau[i]], fi)
 
     return term 
@@ -231,21 +238,29 @@ def limiirl(X, taus, features, M: KMeans, states, transition, f, K=100, gamma=0.
     # for each cluster k, use the max-ent algorithm to obtain a theta estimate 
     theta = np.zeros((K, states))
 
-
-    # calculate initial theta 
-    for k in C:
-        # format trajectories (s_1, a_1, s_2, ...) as (s_1, a_1, s_2), (s_2, a_2, ...)
-        print(f"LiMIIRL: cluster {k}")
-        T = format_traj(C[k])
+    T = format_traj(taus)
 
 
-        terminal_states = calc_terminal_states(C[k])
+    terminal_states = calc_terminal_states(taus)
 
-        _, theta_k = irl_causal(transition, features, terminal_states, T, optim, init, gamma,
+    _, theta_s = irl_causal(transition, features, terminal_states, T, optim, init, gamma,
                     eps=1e-3, eps_svf=1e-4, eps_lap=1e-4)
         
+    for k in range(K): 
         for s in range(states): 
-            theta[k][s] = theta_k[s] 
+            theta[k][s] = theta_s[s] 
+
+    # calculate initial theta 
+    # for k in C:
+    #     # format trajectories (s_1, a_1, s_2, ...) as (s_1, a_1, s_2), (s_2, a_2, ...)
+    #     print(f"LiMIIRL: cluster {k}")
+        
+
+    #     _, theta_k = irl_causal(transition, features, terminal_states, T, optim, init, gamma,
+    #                 eps=1e-3, eps_svf=1e-4, eps_lap=1e-4)
+        
+    #     for s in range(states): 
+    #         theta[k][s] = theta_k[s] 
 
     print("---Finished Light-weight start---")
 
@@ -262,7 +277,15 @@ def limiirl(X, taus, features, M: KMeans, states, transition, f, K=100, gamma=0.
                     # change call to likelihood
                     l = likelihood(taus[i], states, features, transition, theta[k], gamma)
                     print(f"E-step: {i, k}")
-                    u[i][k] = (rho[k] * l) / np.sum([rho[k_prime] * likelihood(taus[i], states, features, transition, theta[k_prime], gamma) for k_prime in range(K)], axis=0)
+
+                    denom = 0 
+                    for k_prime in range(K): 
+                        denom += rho[k_prime] * likelihood(taus[i], states, features, transition, theta[k_prime], gamma)
+
+                    if math.isnan(denom) or denom == 0: 
+                        u[i][k] = 0 
+                        continue 
+                    u[i][k] = (rho[k] * l) / denom 
 
             print("---E-step---")
             # M-step - update parameters 
