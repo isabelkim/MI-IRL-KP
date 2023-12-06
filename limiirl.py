@@ -95,11 +95,18 @@ def likelihood(tau, states, p_0, features, p_transition, theta, gamma=0.9):
 
     _, soft_pi = find_policy(p_transition, reward, states, gamma)
 
-    l = p_0[tau[0]]
+
+    l = np.log(p_0[tau[0]]) 
 
     for i in range(0, n - 2, 2):
-        l *= (soft_pi[tau[i], tau[i + 1]] * p_transition[tau[i], tau[i + 2], tau[i + 1]])
-    return l 
+        if (soft_pi[tau[i], tau[i + 1]]) == 0: 
+            return 0 
+        if (p_transition[tau[i], tau[i + 2], tau[i + 1]]) == 0: 
+            return 0 
+        l += np.log(soft_pi[tau[i], tau[i + 1]]) +  np.log(p_transition[tau[i], tau[i + 2], tau[i + 1]])
+
+    return np.exp(l) 
+
 
 
 def gradient_log_likelihood(tau, f, features, states, p_transition, theta, gamma=0.9): 
@@ -176,6 +183,10 @@ def init_parameters(X, taus, M: KMeans, K=100):
     # initialize rho  
     rho = np.zeros(K)
 
+    for i in range(n): 
+        for j in range(K): 
+            u[i][j] = 1 / K
+
     # for i in range(n):
     #     for j in range(K):
     #         c = M.labels_[i]
@@ -186,8 +197,8 @@ def init_parameters(X, taus, M: KMeans, K=100):
     #         else: 
     #             C[c] = [taus[i]]
     
-    # for k in range(K): 
-    #     rho[k] = np.sum([u[i][k] for i in range(n)], axis=0) / n
+    for k in range(K): 
+        rho[k] = np.sum([u[i][k] for i in range(n)], axis=0) / n
     
     return rho, u, { k: C[k] for k in sorted(C.keys())} 
 
@@ -261,20 +272,19 @@ def limiirl(X, taus, features, M: KMeans, states, transition, f, p_0, K=100, gam
                 for k in range(K): 
                     # change call to likelihood
                     l = likelihood(taus[i], states, p_0, features, transition, theta[k], gamma)
-                    print(f"E-step: {i, k}")
                     u[i][k] = (rho[k] * l) / np.sum([rho[k_prime] * likelihood(taus[i], states, p_0, features, transition, theta[k_prime], gamma) for k_prime in range(K)], axis=0)
 
-            print("---E-step---")
+            # print("---E-step---")
             # M-step - update parameters 
             for k in range(K):
                 rho[k] = np.sum([u[i][k] for i in range(n)]) / n
 
-            print("--M-step--")
+            # print("--M-step--")
             # update theta 
             for k in range(K): 
                 # perform gradient descent 
                 for descent_iter in range(descent_iter): 
-                    print(f"Descent iteration: {descent_iter}, expert: {k}")
+                    # print(f"Descent iteration: {descent_iter}, expert: {k}")
                     s = 0 
                     for i_prime in range(n): 
                         s += u[i][k] * gradient_log_likelihood(taus[i_prime], f, features, states, transition, theta[k], gamma)
@@ -285,7 +295,8 @@ def limiirl(X, taus, features, M: KMeans, states, transition, f, p_0, K=100, gam
                 for k in range(K): 
                     converge_cond += np.abs(u[i][k] - prev_u[i][k])
             converge_cond /= n
-
+            
+            print(f"Convergence condition: {converge_cond}")
             if converge_cond < epsilon: 
                 break 
             
