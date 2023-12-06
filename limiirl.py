@@ -270,6 +270,7 @@ def limiirl(X, taus, features, M: KMeans, states, transition, f, p_0, K=100, gam
             for i in range(n):
                 for k in range(K): 
                     # change call to likelihood
+                    print(f"E-step: {(i, k)}")
                     l = likelihood(taus[i], states, p_0, features, transition, theta[k], gamma)
                     u[i][k] = (rho[k] * l) / np.sum([rho[k_prime] * likelihood(taus[i], states, p_0, features, transition, theta[k_prime], gamma) for k_prime in range(K)], axis=0)
 
