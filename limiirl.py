@@ -96,12 +96,12 @@ def likelihood(tau, states, p_0, features, p_transition, theta, gamma=0.9):
     _, soft_pi = find_policy(p_transition, reward, states, gamma)
 
 
-    l = 0
+    l = 1
 
     for i in range(0, n - 2, 2):
-        l += np.log(soft_pi[tau[i], tau[i + 1]]) 
+        l *= soft_pi[tau[i], tau[i + 1]]
 
-    return np.exp(l) 
+    return l
 
 
 
