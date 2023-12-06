@@ -126,7 +126,7 @@ if __name__ == "__main__":
 
     try: 
         states = int(input("Number of states: ")) 
-        n_patients = int(input("Number of patients: "))
+        # n_patients = int(input("Number of patients: "))
         K = int(input("Number of experts: "))
         start = input("Run EM?: ")
     except: 
