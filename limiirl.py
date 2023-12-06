@@ -21,7 +21,7 @@ init = O.Constant(1.0)
 #  we select exponentiated stochastic gradient descent with linear learning-rate decay
 optim = O.ExpSga(lr=O.linear_decay(lr0=0.2))
 
-
+actions = 6
 
 def find_policy(p_transition, reward, states, discount=0.9):
     """ 
@@ -34,7 +34,7 @@ def find_policy(p_transition, reward, states, discount=0.9):
     returns softmax policy and policy 
     """ 
     V, Q = S.value_iteration(p_transition, reward, discount)
-    Q = Q.reshape((5, states))
+    Q = Q.reshape((actions, states))
 
     # get softmax policy 
     soft_pi = (np.exp(Q)/ np.sum(np.exp(Q), axis = 0)).T
@@ -209,7 +209,7 @@ def create_clusters(u, taus, K=100):
     return { k: C[k] for k in sorted(C.keys())} 
 
 
-def limiirl(X, taus, features, M: KMeans, states, transition, f, K=100, gamma=0.9, epsilon=0.001, max_iter=100, alpha=0.1, descent_iter=200):
+def limiirl(X, taus, features, M: KMeans, states, transition, f, K=100, gamma=0.9, epsilon=0.0001, max_iter=100, alpha=0.2, descent_iter=200, run_EM=True):
     """
     X: feature representation of training trajectories 
     taus: training trajectories 
@@ -249,43 +249,47 @@ def limiirl(X, taus, features, M: KMeans, states, transition, f, K=100, gamma=0.
 
     print("---Finished Light-weight start---")
 
-    for it in range(max_iter): 
+    if run_EM: 
 
-        print(f"EM iteration: {it + 1}")
+        for it in range(max_iter): 
 
-        # E-step
-        prev_u = u 
-        for i in range(n):
+            print(f"EM iteration: {it + 1}")
+
+            # E-step
+            prev_u = u 
+            for i in range(n):
+                for k in range(K): 
+                    # change call to likelihood
+                    l = likelihood(taus[i], states, features, transition, theta[k], gamma)
+                    print(f"E-step: {i, k}")
+                    u[i][k] = (rho[k] * l) / np.sum([rho[k_prime] * likelihood(taus[i], states, features, transition, theta[k_prime], gamma) for k_prime in range(K)], axis=0)
+
+            print("---E-step---")
+            # M-step - update parameters 
+            for k in range(K):
+                rho[k] = np.sum([u[i][k] for i in range(n)]) / n
+
+            print("--M-step--")
+            # update theta 
             for k in range(K): 
-                # change call to likelihood
-                l = likelihood(taus[i], states, features, transition, theta[k], gamma)
-                print(f"E-step: {i, k}")
-                u[i][k] = (rho[k] * l) / np.sum([rho[k_prime] * likelihood(taus[i], states, features, transition, theta[k_prime], gamma) for k_prime in range(K)], axis=0)
+                # perform gradient descent 
+                for descent_iter in range(descent_iter): 
+                    print(f"Descent iteration: {descent_iter}, expert: {k}")
+                    s = 0 
+                    for i_prime in range(n): 
+                        s += u[i][k] * gradient_log_likelihood(taus[i_prime], f, features, states, transition, theta[k], gamma)
+                    theta[k] = theta[k] + alpha * s 
 
-        print("---E-step---")
-        # M-step - update parameters 
-        for k in range(K):
-            rho[k] = np.sum([u[i][k] for i in range(n)]) / n
+            converge_cond = 0 
+            for i in range(n): 
+                for k in range(K): 
+                    converge_cond += np.abs(u[i][k] - prev_u[i][k])
+            converge_cond /= n
 
-        print("--M-step--")
-        # update theta 
-        for k in range(K): 
-            # perform gradient descent 
-            for descent_iter in range(descent_iter): 
-                print(f"Descent iteration: {descent_iter}, expert: {k}")
-                s = 0 
-                for i_prime in range(n): 
-                    s += u[i][k] * gradient_log_likelihood(taus[i_prime], f, features, states, transition, theta[k], gamma)
-                theta[k] = theta[k] + alpha * s 
-
-        converge_cond = 0 
-        for i in range(n): 
-            for k in range(K): 
-                converge_cond += np.abs(u[i][k] - prev_u[i][k])
-        converge_cond /= n
-
-        if converge_cond < epsilon: 
-            break 
-        
-        # return model params 
-    return rho, theta, u         
+            if converge_cond < epsilon: 
+                break 
+            
+            # return model params 
+        return rho, theta, u         
+    
+    return rho, theta, u

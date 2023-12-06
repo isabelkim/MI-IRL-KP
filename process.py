@@ -75,8 +75,8 @@ if __name__ == "__main__":
 
     inputevents_sample = inputevents_df.sample(n=6000000, random_state = 42)
 
-    n_actions = len(inputevents_df['ordercategorydescription'].unique())
-    actions = inputevents_df['ordercategorydescription'].unique() 
+    n_actions = len(inputevents_df['ordercategorydescription'].unique()) + 1 
+    actions = ["No treatment"] + list(inputevents_df['ordercategorydescription'].unique()) 
     action_mapping = {k:v for k, v in zip(actions, range(n_actions))}
 
     patient_data = {} 

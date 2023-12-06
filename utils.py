@@ -219,6 +219,10 @@ def trajs_from_patient(event_series, vital_series):
         if event1['type'] == "state" and event2['type'] == 'action': 
             T.append(int(event1['state']))
             T.append(int(event2['action']))
+        elif event1['type'] == "state": 
+            T.append(int(event1['state']))
+            T.append(0) 
+        
 
     # taking the last vital reading that was recorded 
     # though we should check if this occurs before the last action in T?

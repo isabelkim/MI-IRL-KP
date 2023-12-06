@@ -122,15 +122,18 @@ if __name__ == "__main__":
     states = 0 
     K = 0 
     n_patients = 0 
+    start = ""
 
     try: 
         states = int(input("Number of states: ")) 
         n_patients = int(input("Number of patients: "))
         K = int(input("Number of experts: "))
-
-
+        start = input("Run EM?: ")
     except: 
         print("Error: provide valid number for states")
+
+    append_start = '' if start == "yes" else "_start"
+
 
     M = read_json(f"data/process/M_{states}.json")
     M = np.array(M) 
@@ -143,7 +146,7 @@ if __name__ == "__main__":
 
     print("--Read Trajectories--")
 
-    actions = 5 
+    actions = 6 
     discount = 0.9 
     T = convert_traj(trajectories)
 
@@ -162,30 +165,36 @@ if __name__ == "__main__":
 
     gamma = 0.9
 
-    random_patients = random.sample(list(trajectories.keys()), n_patients)
+    # random_patients = random.sample(list(trajectories.keys()), n_patients)
 
-    trajectories_s = { patient: trajectories[patient] for patient in random_patients }
+    # taus = 
+    # trajectories_s = { patient: trajectories[patient] for patient in random_patients }
 
     ts = datetime.now().timestamp()
 
-    save_json(trajectories_s, f"data/samples/trial_{ts}_{states}.json")
+    # save_json(trajectories_s, f"data/samples/trial_{ts}_{states}{append_start}.json")
+
+    trajectories = {key: value for key, value in trajectories.items() if len(trajectories[key]) >= 6}
+ 
 
     f = feature_expectation_from_trajectories(features, T)
-    X = feature_trajectories(trajectories_s)
+    X = feature_trajectories(trajectories)
 
     cluster_model = cluster_trajectories(X, n_experts=K)
     print("---Clustered Sampled Trajectories---")
 
     max_iterations = 30
-    taus = list(trajectories_s.values())
+    descent_iter = 50 
+    taus = list(trajectories.values())
     epsilon = 0.005
 
     print("---Start LIMIIRL---")
-    rho, theta, u = limiirl(X, taus, features, cluster_model, states, f=f, transition=p_transition, epsilon=0.001, max_iter=max_iterations, K=K, descent_iter=50)
+
+    rho, theta, u = limiirl(X, taus, features, cluster_model, states, f=f, transition=p_transition, epsilon=0.001, max_iter=max_iterations, K=K, descent_iter=descent_iter, run_EM=(start == "yes"))
 
     print("---Finished LIMIIRL---")
 
-    np.savez(f"data/experiments/trial_{ts}_{states}", u=u, rho=rho, theta=theta)
+    np.savez(f"data/experiments/trial_{ts}_{states}{append_start}", u=u, rho=rho, theta=theta)
 
 
 
