@@ -22,7 +22,7 @@ init = O.Constant(1.0)
 #  we select exponentiated stochastic gradient descent with linear learning-rate decay
 optim = O.ExpSga(lr=O.linear_decay(lr0=0.2))
 
-actions = 6
+actions = 5
 
 def find_policy(p_transition, reward, states, discount=0.9):
     """ 
