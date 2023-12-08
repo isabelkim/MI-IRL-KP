@@ -16,7 +16,6 @@ import random
 from datetime import datetime 
 
 
-actions = 5 
 
 def feature_trajectories(taus, gamma=0.9): 
     """ 
@@ -51,7 +50,7 @@ def convert_traj(trajectories):
     return lst
 
 
-def calc_tran_model(taus, states, smoothing_value=1): 
+def calc_tran_model(taus, states, actions, smoothing_value=1): 
     p_transition = np.zeros((states, states, actions)) + smoothing_value
 
     for traj in taus:
@@ -156,7 +155,7 @@ if __name__ == "__main__":
 
     p_0 = calc_start_dist(list(trajectories.values()), states)
     terminal_states = calc_terminal_states(trajectories)
-    p_transition = calc_tran_model(T, states=states)
+    p_transition = calc_tran_model(T, states=states, actions=actions)
     features = state_encoder.fit_transform(np.arange(states).reshape(-1, 1))
 
     reward_single, theta_single = train_single_intent()
@@ -167,16 +166,11 @@ if __name__ == "__main__":
 
     gamma = 0.9
 
-    # random_patients = random.sample(list(trajectories.keys()), n_patients)
-
-    # taus = 
-    # trajectories = { patient: trajectories[patient] for patient in random_patients }
 
     ts = datetime.now().timestamp()
 
-    # save_json(trajectories_s, f"data/samples/trial_{ts}_{states}{append_start}.json")
 
-    trajectories = {key: value for key, value in trajectories.items() if len(trajectories[key]) >= 6}
+    trajectories = {key: value for key, value in trajectories.items() if len(trajectories[key]) >= 7}
  
 
     f = feature_expectation_from_trajectories(features, T)
