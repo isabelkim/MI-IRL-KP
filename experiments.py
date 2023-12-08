@@ -16,6 +16,8 @@ import random
 from datetime import datetime 
 
 
+actions = 5 
+
 def feature_trajectories(taus, gamma=0.9): 
     """ 
     taus: dictionary of the form { patient: tau } where tau is the patient's trajectory 
