@@ -119,7 +119,7 @@ def gradient_log_likelihood(tau, f, features, states, p_transition, theta, gamma
     n = len(tau)
 
     for i in range(0, n - 2, 2): 
-        fi = np.full(6, f[tau[i]])
+        fi = np.full(5, f[tau[i]])
         term += f[tau[i]] - np.dot(soft_pi[tau[i]], fi)
 
     return term 
