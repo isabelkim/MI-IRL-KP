@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
     print("--Read Trajectories--")
 
-    actions = 6 
+    actions = 5 
     discount = 0.9 
     T = convert_traj(trajectories)
 
