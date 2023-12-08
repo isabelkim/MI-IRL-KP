@@ -289,7 +289,7 @@ def limiirl(X, taus, features, M: KMeans, states, transition, f, K=100, gamma=0.
             for k in range(K): 
                 # perform gradient descent 
                 for descent_iter in range(descent_iter): 
-                    # print(f"Descent iteration: {descent_iter}, expert: {k}")
+                    print(f"Descent iteration: {descent_iter}, expert: {k}")
                     s = 0 
                     for i_prime in range(n): 
                         s += u[i][k] * gradient_log_likelihood(taus[i_prime], f, features, states, transition, theta[k], gamma)
